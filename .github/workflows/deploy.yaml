@@ -39,6 +39,4 @@ jobs:
         chmod 600 kubeconfig
         export KUBECONFIG=$(pwd)/kubeconfig
 
-    - name: Deploy no Kubernetes
-      run: |
-        kubectl apply -f k8s/
+
