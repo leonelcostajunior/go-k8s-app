@@ -1,0 +1,44 @@
+name: CI/CD Go App
+
+on:
+  push:
+    branches: [ "main" ]  # Roda sempre que fizer push na branch main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest  # Ambiente Linux do GitHub
+
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4  # Clona seu repositório no runner
+
+    - name: Configurar Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 1.25  # Mesma versão que você usou no Dockerfile
+
+    - name: Build do binário Go
+      run: go build -o app .
+
+    - name: Login no Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build e Push da imagem
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        push: true
+        tags: leonelpaiva/go-k8s-app:latest
+
+    - name: Configurar Kubeconfig
+      run: |
+        echo "${{ secrets.KUBECONFIG }}" > kubeconfig
+        chmod 600 kubeconfig
+        export KUBECONFIG=$(pwd)/kubeconfig
+
+    - name: Deploy no Kubernetes
+      run: |
+        kubectl apply -f k8s/
